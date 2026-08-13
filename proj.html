@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Image Describer — AI Image Description for Visually Impaired Users</title>
+<style>
+
+</style>
+</head>
+<body>
+
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<header>
+  <h1>Image Audio Describer</h1>
+</header>
+
+<main id="main-content">
+
+  <section aria-labelledby="upload-heading">
+    <h2 id="upload-heading">Step 1: Choose an image</h2>
+
+    <label for="imageInput" class="file-label">
+      Upload an image file to describe
+    </label>
+    <input
+      type="file"
+      id="imageInput"
+      accept="image/*"
+      aria-describedby="fileHelp"
+      autofocus
+    >
+    <p id="fileHelp" class="help-text">Accepts JPG, PNG, GIF, or WebP files.</p>
+
+    <div id="imagePreviewWrap" hidden>
+      <img id="imagePreview" alt="Preview of the image you selected" />
+    </div>
+    <label for="questionInput" class="question-label">
+      Optional: ask a specific question about this image
+    </label>
+    <input
+      type="text"
+      id="questionInput"
+      aria-describedby="questionHelp"
+      placeholder="e.g. What color is the car in this photo?"
+    >
+    <p id="questionHelp" class="help-text">
+      Leave this blank for a general description, or type a specific question for the AI to answer instead.
+    </p>
+  </section>
+
+  <section aria-labelledby="action-heading">
+    <h2 id="action-heading">Step 2: Get the description</h2>
+    <button id="describeBtn" type="button" disabled>
+      Describe this image
+    </button>
+  </section>
+  <section aria-labelledby="status-heading">
+    <h2 id="status-heading" class="visually-hidden">Status</h2>
+    <p id="statusMessage" role="status" aria-live="polite">
+      No image selected yet.
+    </p>
+  </section>
+
+  <section aria-labelledby="result-heading">
+    <h2 id="result-heading">Description</h2>
+    <div
+      id="resultText"
+      role="region"
+      aria-live="polite"
+      aria-atomic="true"
+      tabindex="-1"
+    >
+      <p class="placeholder">The description will appear here.</p>
+    </div>
+    <fieldset id="ratingFieldset" class="rating-fieldset" hidden>
+      <legend>Rate this description and optionally leave feedback</legend>
+ 
+      <label for="ratingSelect">How helpful was this description? Choose a number from 1 to 10.</label>
+      <select id="ratingSelect" aria-describedby="ratingHelp">
+        <option value="">Choose a rating&hellip;</option>
+        <option value="1">1 — Not helpful at all</option>
+        <option value="2">2 — Barely helpful</option>
+        <option value="3">3 — Slightly helpful</option>
+        <option value="4">4 — Somewhat helpful</option>
+        <option value="5">5 — Moderately helpful</option>
+        <option value="6">6 — Fairly helpful</option>
+        <option value="7">7 — Helpful</option>
+        <option value="8">8 — Very helpful</option>
+        <option value="9">9 — Highly helpful</option>
+        <option value="10">10 — Extremely useful and detailed</option>
+      </select>
+      <p id="ratingHelp" class="help-text">1 means the description was not helpful at all. 10 means it was extremely useful and detailed.</p>
+ 
+      <label for="feedbackText">Optional: add written feedback</label>
+      <textarea id="feedbackText" rows="3" placeholder="Anything else you'd like to tell us about this description?"></textarea>
+
+      <div class="consent-option">
+        <input type="checkbox" id="saveImageConsent">
+        <label for="saveImageConsent">
+          Save my uploaded image for research purposes
+        </label>
+        <p id="consentHelp" class="help-text">
+          If checked, this image will be stored securely and may be reviewed as part of this research study. If left unchecked, only your description, question, rating, and feedback are saved — your image itself is not stored.
+        </p>
+      </div>
+
+      <button id="submitRatingBtn" type="button">
+        Submit rating
+      </button>
+      <p id="ratingStatus" role="status" aria-live="polite"></p>
+
+    </fieldset>
+  </section>
+
+</main>
+
+<footer>
+  <p>This tool sends your image to an AI service to generate a description. Your image files can be stored for research purposes if you choose to do so. If you submit a rating,your question (if any), the description, your rating, and any written feedback are saved to a spreadsheet for review.</p>
+</footer>
+
+<style>
+  :root {
+    --bg: #ffffff;
+    --text: #0a0a0a;
+    --muted: #4a4a4a;
+    --accent: #0b4fb3;
+    --accent-text: #ffffff;
+    --border: #333333;
+    --focus: #d1440a;
+    --font-base: 20px;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    margin: 0;
+    font-family: "Segoe UI", Arial, Helvetica, sans-serif;
+    color: var(--text);
+    background: var(--bg);
+    font-size: var(--font-base);
+    line-height: 1.6;
+  }
+
+  .skip-link {
+    position: absolute;
+    left: -999px;
+    top: 0;
+    background: var(--accent);
+    color: var(--accent-text);
+    padding: 0.75rem 1.25rem;
+    z-index: 100;
+    font-weight: 700;
+  }
+
+  .skip-link:focus {
+    left: 0;
+  }
+
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  /* Strong, visible focus outline everywhere — never remove this */
+  a:focus-visible,
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible{
+    outline: 4px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  h1:focus,
+  h2:focus,
+  p:focus,
+  legend:focus,
+  .help-text:focus,
+  #resultText:focus,
+  footer p:focus {
+    outline: 3px dashed var(--focus);
+    outline-offset: 3px;
+    background: rgba(209, 68, 10, 0.06);
+  }
+
+  header {
+    background: var(--text);
+    color: #fff;
+    padding: 2rem 1.5rem;
+  }
+
+  header h1 {
+    margin: 0;
+    font-size: 2rem;
+  }
+
+  main {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 1.5rem;
+  }
+
+  section {
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  h2 {
+    font-size: 1.3rem;
+    margin-top: 0;
+  }
+
+  .file-label, 
+  .question-label{
+    display: block;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+
+  .question-label{
+    margin-top: 1.25rem;
+  }
+
+  input[type="file"] {
+    display: block;
+    font-size: 1rem;
+    padding: 0.5rem 0;
+    max-width: 100%;
+  }
+  input[type="text"],
+  select,
+  textarea {
+    display: block;
+    width: 100%;
+    font-size: 1rem;
+    font-family: inherit;
+    padding: 0.6rem;
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    margin-top: 0.25rem;
+  }
+
+  .help-text {
+    color: var(--muted);
+    font-size: 0.95rem;
+    margin-top: 0.4rem;
+  }
+
+  #imagePreviewWrap {
+    margin-top: 1rem;
+  }
+
+  #imagePreview {
+    max-width: 100%;
+    max-height: 300px;
+    border: 2px solid var(--border);
+    border-radius: 6px;
+  }
+
+  button {
+    font-size: 1.05rem;
+    font-weight: 700;
+    padding: 0.8rem 1.4rem;
+    border-radius: 6px;
+    border: 2px solid var(--accent);
+    background: var(--accent);
+    color: var(--accent-text);
+    cursor: pointer;
+    margin-right: 0.75rem;
+    margin-top: 0.5rem;
+  }
+
+  button:hover:not(:disabled) {
+    opacity: 0.9;
+  }
+
+  button:disabled {
+    background: #cfcfcf;
+    border-color: #cfcfcf;
+    color: #3c418a;
+    cursor: not-allowed;
+  }
+ 
+  #statusMessage {
+    font-size: 1.1rem;
+    font-weight: 600;
+  }
+
+  #resultText {
+    background: #f4f4f4;
+    border-radius: 6px;
+    padding: 1rem;
+    min-height: 3em;
+    font-size: 1.15rem;
+  }
+
+  #resultText .placeholder {
+    color: var(--muted);
+    font-style: italic;
+    margin: 0;
+  }
+
+  footer {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 1.5rem;
+    color: var(--muted);
+    font-size: 0.95rem;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+
+  .rating-fieldset {
+    border: none;
+    padding: 0;
+    margin: 1.5rem 0 0;
+  }
+
+  .rating-fieldset legend {
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+    padding: 0;
+    white-space: normal;
+    font-size: 1.05rem;
+  }
+
+  .rating-fieldset label {
+    display: block;
+    font-weight: 700;
+    margin-top: 1rem;
+  }
+ 
+  #ratingStatus {
+    margin-top: 0.75rem;
+    font-weight: 600;
+  }
+
+  .consent-option {
+    margin-top: 1.25rem;
+    padding: 1rem;
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    background: #f9f9f9;
+  }
+ 
+  .consent-option input[type="checkbox"] {
+    width: 1.3rem;
+    height: 1.3rem;
+    margin-right: 0.6rem;
+    vertical-align: middle;
+  }
+ 
+  .consent-option label {
+    display: inline;
+    font-weight: 700;
+    margin-top: 0;
+    vertical-align: middle;
+  }
+ 
+  .consent-option .help-text {
+    margin-top: 0.5rem;
+  }
+
+</style>
+
+<script>
+(function () {
+  "use strict";
+  const TEST_MODE = true;
+
+  const GEMINI_API_KEY = "AQ.Ab8RN6K8IJOtKe2sESOBtG0F0t8l6-3g4s2_orz_06yasdUonQ";
+  const GEMINI_MODEL = "gemini-2.0-flash";
+  const API_ENDPOINT =
+    "https://generativelanguage.googleapis.com/v1beta/models/" +
+    GEMINI_MODEL + ":generateContent?key=" + GEMINI_API_KEY;
+
+  const RATINGS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwXXvCkiU3cVH7zkl1LQOWyLrbrB5WryTtoP03DcoVwzeiHWu21LBOxQ89nU336tzlGeQ/exec"
+  const imageInput = document.getElementById("imageInput");
+  const imagePreviewWrap = document.getElementById("imagePreviewWrap");
+  const imagePreview = document.getElementById("imagePreview");
+  const questionInput = document.getElementById("questionInput");
+  const describeBtn = document.getElementById("describeBtn");
+  const statusMessage = document.getElementById("statusMessage");
+  const resultText = document.getElementById("resultText");
+  const ratingFieldset = document.getElementById("ratingFieldset");
+  const ratingSelect = document.getElementById("ratingSelect");
+  const feedbackText = document.getElementById("feedbackText");
+  const submitRatingBtn = document.getElementById("submitRatingBtn");
+  const ratingStatus = document.getElementById("ratingStatus");
+
+  let selectedFile = null;
+  let lastDescription = "";
+  let lastQuestion = "";
+  let lastImageName = "";
+
+  function announce(message) {
+    statusMessage.textContent = message;
+  }
+
+  function resetRating() {
+    ratingSelect.value = "";
+    ratingSelect.disabled = false;
+    feedbackText.value = "";
+    feedbackText.disabled = false;
+    submitRatingBtn.disabled = false;
+    ratingStatus.textContent = "";
+  }
+
+  function fileToBase64(file) {
+    return new Promise(function (resolve, reject) {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(",")[1]);
+      reader.onerror = () => reject(new Error("Could not read the file."));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function submitRating() {
+    const rating = ratingSelect.value;
+ 
+    if (!rating) {
+      ratingStatus.textContent = "Please choose a rating from 1 to 10 before submitting.";
+      ratingSelect.focus();
+      return;
+    }
+ 
+    ratingStatus.textContent = "Saving your rating...";
+ 
+    const payload = {
+      timestamp: new Date().toISOString(),
+      imageName: lastImageName,
+      question: lastQuestion || "(none — general description)",
+      description: lastDescription,
+      rating: rating,
+      feedback: feedbackText.value.trim() || "(no written feedback)"
+    };
+ 
+
+    try {
+      if (!RATINGS_WEBAPP_URL || RATINGS_WEBAPP_URL.indexOf("YOUR_") === 0) {
+        throw new Error("Ratings spreadsheet is not connected yet.");
+      }
+
+      if (saveImageConsent.checked && selectedFile) {
+        ratingStatus.textContent = "Preparing your image for upload...";
+        payload.imageData = await fileToBase64(selectedFile);
+        payload.imageMimeType = selectedFile.type || "image/jpeg";
+        ratingStatus.textContent = "Saving your rating and image...";
+      }
+
+      await fetch(RATINGS_WEBAPP_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(payload)
+      });
+
+      ratingStatus.textContent = saveImageConsent.checked
+        ? "Thanks! Your " + rating + "/10 rating and image were saved."
+        : "Thanks! Your " + rating + "/10 rating was saved.";
+      ratingSelect.disabled = true;
+      feedbackText.disabled = true;
+      submitRatingBtn.disabled = true;
+    } catch (err) {
+      ratingStatus.textContent = "Could not save your rating (" + err.message + ").";
+    }
+  }
+
+  submitRatingBtn.addEventListener("click", submitRating);
+
+  imageInput.addEventListener("change", function () {
+    const file = imageInput.files && imageInput.files[0];
+    if (!file) {
+      selectedFile = null;
+      describeBtn.disabled = true;
+      imagePreviewWrap.hidden = true;
+      announce("No image selected yet.");
+      return;
+    }
+
+    selectedFile = file;
+    describeBtn.disabled = false;
+    ratingFieldset.hidden = true;
+    resetRating();
+
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      imagePreview.src = e.target.result;
+      imagePreviewWrap.hidden = false;
+    };
+    reader.readAsDataURL(file);
+
+    announce("Image \"" + file.name + "\" selected. Press the Describe this image button to hear a description.");
+  });
+
+  async function describeImage() {
+    if (!selectedFile) return;
+
+    describeBtn.disabled = true;
+    resultText.innerHTML = '<p class="placeholder">Working on it&hellip;</p>';
+    announce("Analyzing image. Please wait.");
+    const question = questionInput.value.trim();
+ 
+    const promptText = question
+      ? "A blind or low-vision user has asked the following question about this image: \"" + question +
+        "\". Answer the question directly and clearly first, then add any other important visual context if it's relevant. Keep the answer concise."
+      : "Describe this image clearly and concisely for a blind or low-vision person. Describe the most important content first (what the image is of), then relevant details like setting, colors, text, and people if present. Keep it under 100 words unless the image is complex.";
+ 
+    try {
+      if (TEST_MODE) {
+
+        await new Promise(function (resolve) { setTimeout(resolve, 800); });
+ 
+        const fakeDescription = question
+          ? "[TEST MODE] This is a fake answer to your question: \"" + question + "\". In real mode, the AI would answer this based on the actual image."
+          : "[TEST MODE] This is a fake description standing in for the AI's real response, so you can test the rating and feedback flow without calling the API.";
+ 
+        lastDescription = fakeDescription;
+        lastQuestion = question;
+        lastImageName = selectedFile.name;
+        resultText.textContent = fakeDescription;
+        resetRating();
+        ratingFieldset.hidden = false;
+        describeBtn.disabled = false;
+        return;
+      }
+ 
+      const base64Data = await fileToBase64(selectedFile);
+      const mediaType = selectedFile.type || "image/jpeg";
+ 
+      const response = await fetch(API_ENDPOINT, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text: promptText
+                },
+                {
+                  inline_data: {
+                    mime_type: mediaType,
+                    data: base64Data
+                  }
+                }
+              ]
+            }
+          ]
+        })
+      });
+
+      if (!response.ok) {
+        const errBody = await response.text();
+        throw new Error("The server returned an error (status " + response.status + "). " + errBody);
+      }
+
+      const data = await response.json();
+      const candidate = data.candidates && data.candidates[0];
+      const description =
+        candidate && candidate.content && candidate.content.parts && candidate.content.parts[0]
+          ? candidate.content.parts[0].text
+          : "";
+
+      if (!description) {
+        throw new Error("No description was returned.");
+      }
+
+      lastDescription = description;
+      lastQuestion = question;
+      lastImageName = selectedFile.name;
+      resultText.textContent = description;
+      resetRating();
+      ratingFieldset.hidden = false;
+    } catch (err) {
+      const message = "Something went wrong: " + err.message + ". Please try again.";
+      resultText.innerHTML = '<p class="placeholder">' + message + "</p>";
+    } finally {
+      describeBtn.disabled = false;
+    }
+  }
+
+  describeBtn.addEventListener("click", describeImage);
+
+  var hoverReadableSelector =
+    "button, input, select, textarea, a[href], " +
+    "h1, h2, p, legend, .help-text, #resultText, footer p";
+ 
+  document.querySelectorAll(hoverReadableSelector).forEach(function (el) {
+    if (!el.hasAttribute("tabindex")) {
+      el.setAttribute("tabindex", "-1");
+    }
+    el.addEventListener("mouseenter", function () {
+      if (!el.disabled) {
+        el.focus();
+      }
+    });
+  });
+})();
+</script>
+
+</body>
+</html>
