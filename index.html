@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Image Describer — AI Image Description for Visually Impaired Users</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ============================================
+     SCREEN 1: LOGIN
+     ============================================ -->
+<div id="loginScreen" class="screen active">
+  <a href="#loginMain" class="skip-link">Skip to main content</a>
+  <header>
+    <h1>Image Audio Describer</h1>
+  </header>
+  <main id="loginMain">
+    <section aria-labelledby="login-heading">
+      <h2 id="login-heading">Enter your participant code</h2>
+      <label for="participantCodeInput" class="code-label">
+        Participant code (leave blank if you don't have one)
+      </label>
+      <input
+        type="text"
+        id="participantCodeInput"
+        aria-describedby="codeHelp"
+        autofocus
+      >
+      <p id="codeHelp" class="help-text">
+        If you were given a participant code for this study, enter it here. If not, leave this blank — your IP address will be recorded instead, so your responses can still be grouped together.
+      </p>
+      <button id="enterBtn" type="button">Enter</button>
+      <p id="loginStatus" role="status" aria-live="polite"></p>
+    </section>
+  </main>
+</div>
+
+<!-- ============================================
+     SCREEN 2: MAIN APP
+     ============================================ -->
+<div id="appScreen" class="screen">
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <header>
+    <h1>Image Audio Describer</h1>
+  </header>
+
+  <main id="main-content">
+
+    <p id="participantBadge"></p>
+
+    <section aria-labelledby="upload-heading">
+      <h2 id="upload-heading">Step 1: Choose an image</h2>
+
+      <label for="imageInput" class="file-label">
+        Upload an image file to describe
+      </label>
+      <input
+        type="file"
+        id="imageInput"
+        accept="image/*"
+        aria-describedby="fileHelp"
+      >
+      <p id="fileHelp" class="help-text">Accepts JPG, PNG, GIF, or WebP files.</p>
+
+      <div id="imagePreviewWrap" hidden>
+        <img id="imagePreview" alt="Preview of the image you selected" />
+      </div>
+      <label for="questionInput" class="question-label">
+        Optional: ask a specific question about this image
+      </label>
+      <input
+        type="text"
+        id="questionInput"
+        aria-describedby="questionHelp"
+        placeholder="e.g. What color is the car in this photo?"
+      >
+      <p id="questionHelp" class="help-text">
+        Leave this blank for a general description, or type a specific question for the AI to answer instead.
+      </p>
+    </section>
+
+    <section aria-labelledby="action-heading">
+      <h2 id="action-heading">Step 2: Get the description</h2>
+      <button id="describeBtn" type="button" disabled>
+        Describe this image
+      </button>
+    </section>
+
+    <section aria-labelledby="status-heading">
+      <h2 id="status-heading" class="visually-hidden">Status</h2>
+      <p id="statusMessage" role="status" aria-live="polite">
+        No image selected yet.
+      </p>
+    </section>
+
+    <section aria-labelledby="result-heading">
+      <h2 id="result-heading">Description</h2>
+      <div
+        id="resultText"
+        role="region"
+        aria-live="polite"
+        aria-atomic="true"
+        tabindex="-1"
+      >
+        <p class="placeholder">The description will appear here.</p>
+      </div>
+      <fieldset id="ratingFieldset" class="rating-fieldset" hidden>
+        <legend>Rate this description and optionally leave feedback</legend>
+
+        <label for="ratingSelect">How helpful was this description? Choose a number from 1 to 10.</label>
+        <select id="ratingSelect" aria-describedby="ratingHelp">
+          <option value="">Choose a rating&hellip;</option>
+          <option value="1">1 — Not helpful at all</option>
+          <option value="2">2 — Barely helpful</option>
+          <option value="3">3 — Slightly helpful</option>
+          <option value="4">4 — Somewhat helpful</option>
+          <option value="5">5 — Moderately helpful</option>
+          <option value="6">6 — Fairly helpful</option>
+          <option value="7">7 — Helpful</option>
+          <option value="8">8 — Very helpful</option>
+          <option value="9">9 — Highly helpful</option>
+          <option value="10">10 — Extremely useful and detailed</option>
+        </select>
+        <p id="ratingHelp" class="help-text">1 means the description was not helpful at all. 10 means it was extremely useful and detailed.</p>
+
+        <label for="feedbackText">Optional: add written feedback</label>
+        <textarea id="feedbackText" rows="3" placeholder="Anything else you'd like to tell us about this description?"></textarea>
+
+        <div class="consent-option">
+          <input type="checkbox" id="saveImageConsent">
+          <label for="saveImageConsent">
+            Save my uploaded image for research purposes
+          </label>
+          <p id="consentHelp" class="help-text">
+            If checked, this image will be stored securely and may be reviewed as part of this research study. If left unchecked, only your description, question, rating, and feedback are saved — your image itself is not stored.
+          </p>
+        </div>
+
+        <button id="submitRatingBtn" type="button">
+          Submit rating
+        </button>
+        <p id="ratingStatus" role="status" aria-live="polite"></p>
+
+      </fieldset>
+    </section>
+
+  </main>
+
+  <footer>
+    <p>This tool sends your image to an AI service to generate a description. Your image files can be stored for research purposes if you choose to do so. If you submit a rating, your question (if any), the description, your rating, and any written feedback are saved to a spreadsheet for review.</p>
+  </footer>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,279 @@
+:root {
+  --bg: #ffffff;
+  --text: #0a0a0a;
+  --muted: #4a4a4a;
+  --accent: #0b4fb3;
+  --accent-text: #ffffff;
+  --border: #333333;
+  --focus: #d1440a;
+  --font-base: 20px;
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", Arial, Helvetica, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+  font-size: var(--font-base);
+  line-height: 1.6;
+}
+
+.skip-link {
+  position: absolute;
+  left: -999px;
+  top: 0;
+  background: var(--accent);
+  color: var(--accent-text);
+  padding: 0.75rem 1.25rem;
+  z-index: 100;
+  font-weight: 700;
+}
+
+.skip-link:focus {
+  left: 0;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Strong, visible focus outline everywhere — never remove this */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 4px solid var(--focus);
+  outline-offset: 2px;
+}
+
+h1:focus,
+h2:focus,
+p:focus,
+legend:focus,
+.help-text:focus,
+#resultText:focus,
+footer p:focus {
+  outline: 3px dashed var(--focus);
+  outline-offset: 3px;
+  background: rgba(209, 68, 10, 0.06);
+}
+
+header {
+  background: var(--text);
+  color: #fff;
+  padding: 2rem 1.5rem;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 2rem;
+}
+
+/* Screens: only one visible at a time */
+.screen {
+  display: none;
+}
+
+.screen.active {
+  display: block;
+}
+
+#loginScreen main {
+  max-width: 480px;
+}
+
+main {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+section {
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+h2 {
+  font-size: 1.3rem;
+  margin-top: 0;
+}
+
+.file-label,
+.question-label,
+.model-label,
+.code-label {
+  display: block;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.question-label,
+.model-label {
+  margin-top: 1.25rem;
+}
+
+input[type="file"] {
+  display: block;
+  font-size: 1rem;
+  padding: 0.5rem 0;
+  max-width: 100%;
+}
+
+input[type="text"],
+select,
+textarea {
+  display: block;
+  width: 100%;
+  font-size: 1rem;
+  font-family: inherit;
+  padding: 0.6rem;
+  border: 2px solid var(--border);
+  border-radius: 6px;
+  margin-top: 0.25rem;
+}
+
+.help-text {
+  color: var(--muted);
+  font-size: 0.95rem;
+  margin-top: 0.4rem;
+}
+
+#imagePreviewWrap {
+  margin-top: 1rem;
+}
+
+#imagePreview {
+  max-width: 100%;
+  max-height: 300px;
+  border: 2px solid var(--border);
+  border-radius: 6px;
+}
+
+button {
+  font-size: 1.05rem;
+  font-weight: 700;
+  padding: 0.8rem 1.4rem;
+  border-radius: 6px;
+  border: 2px solid var(--accent);
+  background: var(--accent);
+  color: var(--accent-text);
+  cursor: pointer;
+  margin-right: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+button:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+button:disabled {
+  background: #cfcfcf;
+  border-color: #cfcfcf;
+  color: #3c418a;
+  cursor: not-allowed;
+}
+
+#statusMessage {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+#resultText {
+  background: #f4f4f4;
+  border-radius: 6px;
+  padding: 1rem;
+  min-height: 3em;
+  font-size: 1.15rem;
+}
+
+#resultText .placeholder {
+  color: var(--muted);
+  font-style: italic;
+  margin: 0;
+}
+
+footer {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+
+.rating-fieldset {
+  border: none;
+  padding: 0;
+  margin: 1.5rem 0 0;
+}
+
+.rating-fieldset legend {
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+  padding: 0;
+  white-space: normal;
+  font-size: 1.05rem;
+}
+
+.rating-fieldset label {
+  display: block;
+  font-weight: 700;
+  margin-top: 1rem;
+}
+
+#ratingStatus {
+  margin-top: 0.75rem;
+  font-weight: 600;
+}
+
+.consent-option {
+  margin-top: 1.25rem;
+  padding: 1rem;
+  border: 2px solid var(--border);
+  border-radius: 6px;
+  background: #f9f9f9;
+}
+
+.consent-option input[type="checkbox"] {
+  width: 1.3rem;
+  height: 1.3rem;
+  margin-right: 0.6rem;
+  vertical-align: middle;
+}
+
+.consent-option label {
+  display: inline;
+  font-weight: 700;
+  margin-top: 0;
+  vertical-align: middle;
+}
+
+.consent-option .help-text {
+  margin-top: 0.5rem;
+}
+
+#loginStatus {
+  margin-top: 0.75rem;
+  font-weight: 600;
+}
+
+#participantBadge {
+  font-size: 0.9rem;
+  color: var(--muted);
+  margin: 0 0 1rem;
+}
