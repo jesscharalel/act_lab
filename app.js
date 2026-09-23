@@ -2,25 +2,115 @@
   "use strict";
   const TEST_MODE = false;
 //copy and repeat this for open AI, and other models as well
-  const GEMINI_API_KEY = "AQ.Ab8RN6K8IJOtKe2sESOBtG0F0t8l6-3g4s2_orz_06yasdUonQ";
-  const GEMINI_MODEL = "gemini-3.6-flash";
-  const API_ENDPOINT =
-    "https://generativelanguage.googleapis.com/v1beta/models/" +
-    GEMINI_MODEL + ":generateContent?key=" + GEMINI_API_KEY;
-
-    const OPENAI_API_KEY = "AQ.Ab8RN6K8IJOtKe2sESOBtG0F0t8l6-3g4s2_orz_06yasdUonQ";
-    const OPENAI_MODEL = "gpt-3.5-turbo";
-    const OPENAI_API_ENDPOINT =
-    "https://generativelanguage.googleapis.com/v1beta/models/" +
-    OPENAI_MODEL + ":generateContent?key=" + OPENAI_API_KEY;
-
-    const CLAUDE_API_KEY = "AQ.Ab8RN6K8IJOtKe2sESOBtG0F0t8l6-3g4s2_orz_06yasdUonQ";
-  const CLAUDE_MODEL = "claude-3-5-sonnet";
-  const CLAUDE_API_ENDPOINT =
-    "https://generativelanguage.googleapis.com/v1beta/models/" +
-    CLAUDE_MODEL + ":generateContent?key=" + CLAUDE_API_KEY;
-
-  const RATINGS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwXXvCkiU3cVH7zkl1LQOWyLrbrB5WryTtoP03DcoVwzeiHWu21LBOxQ89nU336tzlGeQ/exec";
+  // ---- Model rotation config ----
+  // Each entry describes one AI backend. "id" is the internal label written
+  // to the ratings spreadsheet — it is never shown to the participant.
+  // "call" takes (base64Data, mediaType, promptText) and resolves to a
+  // plain-text description string.
+  const MODELS = [
+    {
+      id: "gemini-3.6-flash",
+      call: async function (base64Data, mediaType, promptText) {
+        const GEMINI_API_KEY = "apikeyhere";
+        const GEMINI_MODEL = "gemini-3.6-flash";
+        const endpoint =
+          "https://generativelanguage.googleapis.com/v1beta/models/" +
+          GEMINI_MODEL + ":generateContent?key=" + GEMINI_API_KEY;
+ 
+        const response = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [
+              {
+                parts: [
+                  { text: promptText },
+                  { inline_data: { mime_type: mediaType, data: base64Data } }
+                ]
+              }
+            ]
+          })
+        });
+ 
+        if (!response.ok) {
+          const errBody = await response.text();
+          throw new Error("The server returned an error (status " + response.status + "). " + errBody);
+        }
+ 
+        const data = await response.json();
+        const candidate = data.candidates && data.candidates[0];
+        const text =
+          candidate && candidate.content && candidate.content.parts && candidate.content.parts[0]
+            ? candidate.content.parts[0].text
+            : "";
+        if (!text) throw new Error("No description was returned.");
+        return text;
+      }
+    },
+    {
+      id: "claude-vision",
+      call: async function (base64Data, mediaType, promptText) {
+        const ANTHROPIC_API_KEY = "apikeyhere";
+        const ANTHROPIC_MODEL = "claude-sonnet-4-5";
+        const endpoint = "https://api.anthropic.com/v1/messages";
+ 
+        const response = await fetch(endpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": ANTHROPIC_API_KEY,
+            "anthropic-version": "2023-06-01",
+            // Required to call the Anthropic API directly from a browser.
+            "anthropic-dangerous-direct-browser-access": "true"
+          },
+          body: JSON.stringify({
+            model: ANTHROPIC_MODEL,
+            max_tokens: 500,
+            messages: [
+              {
+                role: "user",
+                content: [
+                  { type: "image", source: { type: "base64", media_type: mediaType, data: base64Data } },
+                  { type: "text", text: promptText }
+                ]
+              }
+            ]
+          })
+        });
+ 
+        if (!response.ok) {
+          const errBody = await response.text();
+          throw new Error("The server returned an error (status " + response.status + "). " + errBody);
+        }
+ 
+        const data = await response.json();
+        const text = data.content && data.content[0] ? data.content[0].text : "";
+        if (!text) throw new Error("No description was returned.");
+        return text;
+      }
+    }
+  ];
+ 
+  // ISO-8601 week number (1-53), used so the model rotates once a week
+  // regardless of how many times the page is loaded.
+  function getISOWeekNumber(date) {
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const dayNum = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+  }
+ 
+  function getModelForThisWeek() {
+    const week = getISOWeekNumber(new Date());
+    const index = week % MODELS.length;
+    return MODELS[index];
+  }
+ 
+  // Picked once per page load; every describe request this session uses it.
+  const activeModel = getModelForThisWeek();
+  let lastModelUsed = activeModel.id;
+  const PARTICIPANT_SESSION_KEY = "imageDescriberParticipantId"
 
   // ---- Login screen elements ----
   const loginScreen = document.getElementById("loginScreen");
@@ -44,12 +134,15 @@
   const submitRatingBtn = document.getElementById("submitRatingBtn");
   const ratingStatus = document.getElementById("ratingStatus");
   const saveImageConsent = document.getElementById("saveImageConsent");
+  const RATINGS_WEBAPP_URL = "script here"
 
   let selectedFile = null;
   let lastDescription = "";
   let lastQuestion = "";
   let lastImageName = "";
-  let participantCode = "";
+  let participantId = "";
+  let ipAddress = "unknown";
+  let browserInfo = {};
 
   function announce(message) {
     statusMessage.textContent = message;
@@ -74,32 +167,105 @@
   }
 
   // ---- Login -> main app transition ----
-  function enterApp() {
-    participantCode = participantCodeInput.value.trim();
-
-    // Switch which screen is visible
+  async function fetchPublicIp() {
+    const response = await fetch("https://api.ipify.org?format=json");
+    if (!response.ok) {
+      throw new Error("Could not determine IP address.");
+    }
+    const data = await response.json();
+    return data.ip;
+  }
+ 
+  // Pulls identifying details straight from the browser's own APIs —
+  // no external service needed for these, unlike the IP lookup.
+  // Useful for a research study to know, e.g., what browser/OS/screen
+  // size participants actually used.
+  function getBrowserInfo() {
+    let timezone = "unknown";
+    try {
+      timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "unknown";
+    } catch (e) {
+      // Some very old browsers don't support Intl.DateTimeFormat at all.
+    }
+ 
+    return {
+      userAgent: navigator.userAgent || "unknown",
+      language: navigator.language || "unknown",
+      platform: navigator.platform || "unknown",
+      screenResolution: (window.screen ? window.screen.width + "x" + window.screen.height : "unknown"),
+      timezone: timezone
+    };
+  }
+ 
+  function showAppScreen() {
     loginScreen.classList.remove("active");
     appScreen.classList.add("active");
-
-    // Show what identifier is being used, for the participant's own reference
-    participantBadge.textContent = participantCode
-      ? "Participant code: " + participantCode
-      : "No participant code entered — your IP address will be used to group your responses.";
-
-    // Move focus into the new screen for screen reader / keyboard users
-    appScreen.setAttribute("tabindex", "-1");
-    appScreen.focus();
+    participantBadge.textContent = "Participant ID: " + participantId + " (IP: " + ipAddress + ")";
+  }
+ 
+  function persistSession() {
+    sessionStorage.setItem(PARTICIPANT_SESSION_KEY, JSON.stringify({
+      participantId: participantId,
+      ipAddress: ipAddress,
+      browserInfo: browserInfo
+    }));
+  }
+ 
+  async function handleEnter() {
+    const code = participantCodeInput.value.trim();
+    enterBtn.disabled = true;
+ 
+    browserInfo = getBrowserInfo();
+ 
+    // Always attempt to look up the IP address, regardless of
+    // whether a participant code was entered — a code identifies
+    // the person, but the IP is recorded alongside it as extra
+    // context either way.
+    loginStatus.textContent = "Setting things up...";
+    try {
+      ipAddress = await fetchPublicIp();
+    } catch (err) {
+      ipAddress = "unknown";
+    }
+ 
+    if (code) {
+      participantId = code;
+    } else {
+      participantId = ipAddress !== "unknown" ? "IP:" + ipAddress : "UNKNOWN:" + Date.now();
+    }
+ 
+    persistSession();
+    showAppScreen();
+    enterBtn.disabled = false;
   }
 
-  enterBtn.addEventListener("click", enterApp);
+  enterBtn.addEventListener("click", handleEnter);
 
   // Let pressing Enter in the participant code field submit too
   participantCodeInput.addEventListener("keydown", function (e) {
     if (e.key === "Enter") {
       e.preventDefault();
-      enterApp();
+      handleEnter();
     }
   });
+
+  (function checkExistingSession() {
+    const existingRaw = sessionStorage.getItem(PARTICIPANT_SESSION_KEY);
+    if (existingRaw) {
+      try {
+        const existing = JSON.parse(existingRaw);
+        participantId = existing.participantId || "";
+        ipAddress = existing.ipAddress || "unknown";
+        browserInfo = existing.browserInfo || getBrowserInfo();
+        if (participantId) {
+          showAppScreen();
+        }
+      } catch (e) {
+        // Corrupted/old-format session value — ignore and show login.
+      }
+    }
+  })();
+ 
 
   // ---- Rating submission ----
   async function submitRating() {
@@ -121,7 +287,7 @@
       description: lastDescription,
       rating: rating,
       feedback: feedbackText.value.trim() || "(no written feedback)",
-      model: GEMINI_MODEL
+      model: lastModelUsed
     };
 
     try {
@@ -217,46 +383,9 @@
       const base64Data = await fileToBase64(selectedFile);
       const mediaType = selectedFile.type || "image/jpeg";
 
-      const response = await fetch(API_ENDPOINT, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                {
-                  text: promptText
-                },
-                {
-                  inline_data: {
-                    mime_type: mediaType,
-                    data: base64Data
-                  }
-                }
-              ]
-            }
-          ]
-        })
-      });
-
-      if (!response.ok) {
-        const errBody = await response.text();
-        throw new Error("The server returned an error (status " + response.status + "). " + errBody);
-      }
-
-      const data = await response.json();
-      const candidate = data.candidates && data.candidates[0];
-      const description =
-        candidate && candidate.content && candidate.content.parts && candidate.content.parts[0]
-          ? candidate.content.parts[0].text
-          : "";
-
-      if (!description) {
-        throw new Error("No description was returned.");
-      }
-
+      const description = await activeModel.call(base64Data, mediaType, promptText);
+      lastModelUsed = activeModel.id;
+ 
       lastDescription = description;
       lastQuestion = question;
       lastImageName = selectedFile.name;
