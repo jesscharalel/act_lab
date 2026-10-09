@@ -2,7 +2,7 @@
   "use strict";
   const TEST_MODE = false;
 //copy and repeat this for open AI, and other models as well
-  // ---- Model rotation config ----
+  //  Model rotation 
   // Each entry describes one AI backend. "id" is the internal label written
   // to the ratings spreadsheet — it is never shown to the participant.
   // "call" takes (base64Data, mediaType, promptText) and resolves to a
@@ -60,7 +60,6 @@
             "Content-Type": "application/json",
             "x-api-key": ANTHROPIC_API_KEY,
             "anthropic-version": "2023-06-01",
-            // Required to call the Anthropic API directly from a browser.
             "anthropic-dangerous-direct-browser-access": "true"
           },
           body: JSON.stringify({
@@ -112,7 +111,7 @@
   let lastModelUsed = activeModel.id;
   const PARTICIPANT_SESSION_KEY = "imageDescriberParticipantId"
 
-  // ---- Login screen elements ----
+  //Login screen elements 
   const loginScreen = document.getElementById("loginScreen");
   const appScreen = document.getElementById("appScreen");
   const participantCodeInput = document.getElementById("participantCodeInput");
@@ -120,7 +119,7 @@
   const loginStatus = document.getElementById("loginStatus");
   const participantBadge = document.getElementById("participantBadge");
 
-  // ---- Main app elements ----
+  // Main app elements
   const imageInput = document.getElementById("imageInput");
   const imagePreviewWrap = document.getElementById("imagePreviewWrap");
   const imagePreview = document.getElementById("imagePreview");
@@ -166,7 +165,7 @@
     });
   }
 
-  // ---- Login -> main app transition ----
+  //  main app transition 
   async function fetchPublicIp() {
     const response = await fetch("https://api.ipify.org?format=json");
     if (!response.ok) {
@@ -267,7 +266,7 @@
   })();
  
 
-  // ---- Rating submission ----
+  //Rating submission 
   async function submitRating() {
     const rating = ratingSelect.value;
 
@@ -322,7 +321,7 @@
 
   submitRatingBtn.addEventListener("click", submitRating);
 
-  // ---- Image selection ----
+  //Image selection
   imageInput.addEventListener("change", function () {
     const file = imageInput.files && imageInput.files[0];
     if (!file) {
@@ -402,7 +401,7 @@
 
   describeBtn.addEventListener("click", describeImage);
 
-  // ---- Hover-to-focus for read-aloud / screen magnifier support ----
+  //]Hover-to-focus for read-aloud / screen magnifier support
   var hoverReadableSelector =
     "button, input, select, textarea, a[href], " +
     "h1, h2, p, legend, .help-text, #resultText, footer p";
